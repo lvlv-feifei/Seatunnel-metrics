@@ -7,14 +7,15 @@ object WorkCount {
 
     val spark = SparkSession.builder()
       .master("local[*]")
+      .appName("spark_job")
       //.config("spark.extraListeners","wc.ListenerDemo1")
-      .config("spark.metrics.conf.*.sink.console.class", "org.apache.seatunnel.metrics.spark.MineConsoleSink")
-      .config("spark.metrics.conf.*.source.jvm.class","org.apache.spark.metrics.source.JvmSource")
+      .config("spark.metrics.conf.*.sink.console.class", "org.apache.spark.seatunnel.metrics.sink.SeatunnelMetricSink")
+      .config("spark.metrics.conf.*.source.jvm.class", "org.apache.spark.metrics.source.JvmSource")
       .enableHiveSupport()
       .getOrCreate()
 
-    val wordString = Array("hadoop", "hadoop", "spark","spark","spark","spark","flink","flink","flink","flink",
-      "flink","flink","hive","flink","hdfs","yarn","zookeeper","hbase","impala","sqoop","hadoop")
+    val wordString = Array("hadoop", "hadoop", "spark", "spark", "spark", "spark", "flink", "flink", "flink", "flink",
+      "flink", "flink", "hive", "flink", "hdfs", "yarn", "zookeeper", "hbase", "impala", "sqoop", "hadoop")
 
     //生成Rdd
     val wordRdd: RDD[String] = spark.sparkContext.parallelize(wordString)

@@ -45,11 +45,10 @@ public class WindowWordCount {
                                 "Configures the parameter <parameter> for the reporter named <name>.");
         Duration duration = Duration.ofSeconds(30);
 
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration().set(REPORTERS_LIST,"seatunnel_reporter").set(REPORTER_CLASS,"org.apache.seatunnel.metrics.flink.SeatunnelMetricReporter").set(REPORTER_INTERVAL,duration));
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration().set(REPORTERS_LIST, "seatunnel_reporter").set(REPORTER_CLASS, "org.apache.seatunnel.metrics.flink.SeatunnelMetricReporter").set(REPORTER_INTERVAL, duration));
         //StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration().set(REPORTERS_LIST,"seatunnel_reporter").set(REPORTER_CLASS,"org.apache.flink.metrics.slf4j.Slf4jReporter").set(REPORTER_INTERVAL,duration));
         //StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration().set(REPORTERS_LIST,"seatunnel_reporter").set(REPORTER_CLASS,"org.apache.flink.metrics.prometheus.PrometheusReporter").set(REPORTER_INTERVAL,duration).set(REPORTER_CONFIG_PARAMETER,"9999"));
         //StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
 
 
         DataStream<Tuple2<String, Integer>> dataStream = env
@@ -67,7 +66,7 @@ public class WindowWordCount {
     public static class Splitter implements FlatMapFunction<String, Tuple2<String, Integer>> {
         @Override
         public void flatMap(String sentence, Collector<Tuple2<String, Integer>> out) throws Exception {
-            for (String word: sentence.split(" ")) {
+            for (String word : sentence.split(" ")) {
                 out.collect(new Tuple2<String, Integer>(word, 1));
             }
         }

@@ -16,9 +16,9 @@ import java.util.Map;
 public class PrometheusPushGatewayReporter implements MetricReporter{
 
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushGatewayReporter.class);
+    final URL hostUrl;
     private final PushGateway pushGateway;
     private final String jobName;
-    final URL hostUrl;
 
     public PrometheusPushGatewayReporter(String jobName, String host ,int port){
         String url = "";
@@ -38,6 +38,41 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
         this.pushGateway = new PushGateway(hostUrl);
     }
 
+    public static boolean isNullOrWhitespaceOnly(String str) {
+        if (str == null || str.length() == 0) {
+            return true;
+        }
+
+        final int len = str.length();
+        for (int i = 0; i < len; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static io.prometheus.client.Gauge.Child gaugeFrom(Counter counter) {
+        return new io.prometheus.client.Gauge.Child() {
+            @Override
+            public double get() {
+                return (double) counter.getCount();
+            }
+        };
+    }
+
+    private static io.prometheus.client.Gauge.Child gaugeFrom(Meter meter) {
+        return new io.prometheus.client.Gauge.Child() {
+            @Override
+            public double get() {
+                return meter.getRate();
+            }
+        };
+    }
+
+    private static String[] toArray(List<String> list) {
+        return list.toArray(new String[list.size()]);
+    }
 
     @Override
     public PrometheusPushGatewayReporter open() {
@@ -111,20 +146,6 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
                     jobName,
                     e);
         }
-    }
-
-    public static boolean isNullOrWhitespaceOnly(String str) {
-        if (str == null || str.length() == 0) {
-            return true;
-        }
-
-        final int len = str.length();
-        for (int i = 0; i < len; i++) {
-            if (!Character.isWhitespace(str.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private Collector createCollector(Metric metric,
@@ -211,28 +232,5 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
                 return 0;
             }
         };
-    }
-
-    private static io.prometheus.client.Gauge.Child gaugeFrom(Counter counter) {
-        return new io.prometheus.client.Gauge.Child() {
-            @Override
-            public double get() {
-                return (double) counter.getCount();
-            }
-        };
-    }
-
-    private static io.prometheus.client.Gauge.Child gaugeFrom(Meter meter) {
-        return new io.prometheus.client.Gauge.Child() {
-            @Override
-            public double get() {
-                return meter.getRate();
-            }
-        };
-    }
-
-
-    private static String[] toArray(List<String> list) {
-        return list.toArray(new String[list.size()]);
     }
 }
