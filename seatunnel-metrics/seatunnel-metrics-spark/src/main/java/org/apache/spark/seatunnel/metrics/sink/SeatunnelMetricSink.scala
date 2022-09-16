@@ -1,6 +1,7 @@
 package org.apache.spark.seatunnel.metrics.sink
 
 import com.codahale.metrics.MetricRegistry
+import org.apache.seatunnel.metrics.core.reporter.MetricReporter
 import org.apache.seatunnel.metrics.spark.SeatunnelMetricSink.SinkConfig
 import org.apache.spark.internal.config
 import org.apache.spark.metrics.sink.Sink

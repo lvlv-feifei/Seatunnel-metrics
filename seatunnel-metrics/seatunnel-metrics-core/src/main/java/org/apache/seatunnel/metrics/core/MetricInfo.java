@@ -5,6 +5,9 @@ import java.util.List;
 /** Stores all child-properties of a metric. */
 public class MetricInfo {
     private String metricName;
+    private List<String> dimensionKeys;
+    private List<String> dimensionValues;
+    private String helpString;
 
     public String getMetricName() {
         return metricName;
@@ -21,11 +24,6 @@ public class MetricInfo {
     public List<String> getDimensionValues() {
         return dimensionValues;
     }
-
-    private String helpString;
-    List<String> dimensionKeys;
-    List<String> dimensionValues;
-
     public MetricInfo(String metricName, String helpString, List<String> dimensionKeys, List<String> dimensionValues) {
         this.metricName = metricName;
         this.helpString = helpString;

@@ -1,12 +1,14 @@
 package org.apache.seatunnel.metrics.spark
 
+import com.codahale.metrics
 import com.codahale.metrics._
+import org.apache.seatunnel.metrics.core.reporter.PrometheusPushGatewayReporter
+import org.apache.seatunnel.metrics.core.{MetricInfo, SimpleGauge}
 import org.apache.spark.internal.Logging
 
 import java.util
 import java.util.concurrent.TimeUnit
 import java.util.{Locale, Properties}
-import scala.collection.JavaConverters.asScalaSetConverter
 
 object SeatunnelMetricSink {
   trait SinkConfig extends Serializable {
@@ -35,13 +37,7 @@ abstract class SeatunnelMetricSink(property: Properties,
       metricFilter,
       TimeUnit.SECONDS,
       TimeUnit.MILLISECONDS) {
-
-    override def report(gauges: util.SortedMap[String, Gauge[_]],
-                        counters: util.SortedMap[String, Counter],
-                        histograms: util.SortedMap[String, Histogram],
-                        meters: util.SortedMap[String, Meter],
-                        timers: util.SortedMap[String, Timer]): Unit = {
-
+    override def report(gauges: util.SortedMap[String, Gauge[_]], counters: util.SortedMap[String, metrics.Counter], histograms: util.SortedMap[String, metrics.Histogram], meters: util.SortedMap[String, metrics.Meter], timers: util.SortedMap[String, Timer]): Unit = {
       logInfo(s"metricsNamespace=$metricsNamespace, sparkAppName=$sparkAppName, sparkAppId=$sparkAppId, " +
         s"executorId=$executorId")
 
@@ -57,13 +53,37 @@ abstract class SeatunnelMetricSink(property: Properties,
         case _ => metricsNamespace.getOrElse("unknown")
       }
 
-      val instance: String = "instance"
+      //val instance: String = "instance"
       val appName: String = sparkAppName.getOrElse("")
 
       logInfo(s"role=$role, job=$job")
 
-    }
+      val dimensionKeys = new util.LinkedList[String]()
+      val dimensionValues = new util.LinkedList[String]()
+      dimensionKeys.add("job_name")
+      dimensionValues.add(appName)
+      dimensionKeys.add("job_id")
+      dimensionValues.add(job)
+      dimensionKeys.add("role")
+      dimensionValues.add(role)
 
+      val countersIndex = new util.HashMap[org.apache.seatunnel.metrics.core.Counter, MetricInfo]
+      val gaugesIndex = new util.HashMap[org.apache.seatunnel.metrics.core.Gauge[_], MetricInfo]
+      val histogramsIndex = new util.HashMap[org.apache.seatunnel.metrics.core.Histogram, MetricInfo]
+      val metersIndex = new util.HashMap[org.apache.seatunnel.metrics.core.Meter, MetricInfo]
+
+      gauges.keySet().forEach(metricName => {
+        val metric = gauges.get(metricName)
+        val num = numeric(metric.getValue)
+        if (num.toString != Long.MaxValue.toString) {
+          gaugesIndex.put(new SimpleGauge(num), newMetricInfo(metricName, dimensionKeys, dimensionValues))
+        } else {
+          logError(metricName + " is to a number ")
+        }
+      })
+      val reporter = new PrometheusPushGatewayReporter("prometheus_spark_job", "localhost", 9091)
+      reporter.report(gaugesIndex, countersIndex, histogramsIndex, metersIndex)
+    }
   }
 
   val CONSOLE_DEFAULT_PERIOD = 10
@@ -87,18 +107,48 @@ abstract class SeatunnelMetricSink(property: Properties,
 
   val metricsFilter: MetricFilter = MetricFilter.ALL
 
-  val reporter = new SeatunnelMetricReporter(registry, metricsFilter)
+  val seatunnelReporter = new SeatunnelMetricReporter(registry, metricsFilter)
 
   def start(): Unit = {
-    reporter.start(pollPeriod, pollUnit)
+    seatunnelReporter.start(pollPeriod, pollUnit)
   }
 
   def stop(): Unit = {
-    reporter.stop()
+    seatunnelReporter.stop()
   }
 
   def report(): Unit = {
-    reporter.report()
+    seatunnelReporter.report()
+  }
+
+  private def numeric(a: Any): Number = {
+    //val NumericString = Array("double","Double", "float","Float", "int","Int", "long", "Long", "short","Short")
+    a.getClass.getSimpleName match {
+      case "Integer" => a.toString.toInt
+      case "Double" => a.toString.toDouble
+      case "Float" => a.toString.toFloat
+      case "Long" => a.toString.toLong
+      case "Short" => a.toString.toShort
+      case _ => Long.MaxValue
+    }
+  }
+
+  private def newMetricInfo(info: String, dimensionKeys: util.LinkedList[String], dimensionValues: util.LinkedList[String]): MetricInfo = {
+    val proInfo = info.replace("-", "_")
+    val infos = proInfo.split("\\.")
+
+    var metricName = infos.drop(1).map(str => {
+      str + "_"
+    }).mkString("")
+    metricName = metricName.dropRight(1)
+    val seatunnelMetricName = "seatunnel_" + metricName
+
+    //dimensionKeys.add("sourceName")
+    //dimensionValues.add(infos.apply(2))
+
+    val helpString = infos.apply(2) + "(scope:" + metricName + ")"
+
+    new MetricInfo(seatunnelMetricName, helpString, dimensionKeys, dimensionValues)
   }
 
 }
