@@ -3,10 +3,6 @@ package org.apache.seatunnel.metrics.core;
 public class SimpleCounter implements Counter {
     private long count;
 
-    public SimpleCounter(){
-
-    }
-
     public SimpleCounter(long count) {
         this.count = count;
     }

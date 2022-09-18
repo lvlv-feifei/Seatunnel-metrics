@@ -30,4 +30,23 @@ public class MetricInfo {
         this.dimensionKeys = dimensionKeys;
         this.dimensionValues = dimensionValues;
     }
+
+    @Override
+    public String toString() {
+        String lineSeparator = System.lineSeparator();
+        StringBuilder builder = new StringBuilder();
+        builder.append("metricName: ")
+                .append(this.metricName)
+                .append(lineSeparator);
+        builder.append("helpString: ")
+                .append(this.helpString)
+                .append(lineSeparator);
+        for(int i=0;i<this.dimensionKeys.size();i++){
+            builder.append(dimensionKeys.get(i))
+                    .append(": ")
+                    .append(dimensionValues.get(i))
+                    .append(lineSeparator);
+        }
+        return builder.toString();
+    }
 }

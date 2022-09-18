@@ -10,10 +10,6 @@ public class SimpleMeter implements Meter{
         this.count = count;
     }
 
-    public SimpleMeter(){
-
-    }
-
     @Override
     public double getRate() {
         return this.rate;

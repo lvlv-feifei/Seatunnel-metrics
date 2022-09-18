@@ -12,15 +12,17 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-/**  A reporter which outputs measurements to PrometheusPushGateway */
-public class PrometheusPushGatewayReporter implements MetricReporter{
+/**
+ * A reporter which outputs measurements to PrometheusPushGateway
+ */
+public class PrometheusPushGatewayReporter implements MetricReporter {
 
     private static final Logger LOG = LoggerFactory.getLogger(PrometheusPushGatewayReporter.class);
     final URL hostUrl;
     private final PushGateway pushGateway;
     private final String jobName;
 
-    public PrometheusPushGatewayReporter(String jobName, String host ,int port){
+    public PrometheusPushGatewayReporter(String jobName, String host, int port) {
         String url = "";
         if (isNullOrWhitespaceOnly(host) || port < 1) {
             throw new IllegalArgumentException(
@@ -32,52 +34,16 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
         this.jobName = jobName;
         try {
             this.hostUrl = new URL(url);
-        }catch (MalformedURLException e){
+        } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
         this.pushGateway = new PushGateway(hostUrl);
     }
 
-    public static boolean isNullOrWhitespaceOnly(String str) {
-        if (str == null || str.length() == 0) {
-            return true;
-        }
-
-        final int len = str.length();
-        for (int i = 0; i < len; i++) {
-            if (!Character.isWhitespace(str.charAt(i))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private static io.prometheus.client.Gauge.Child gaugeFrom(Counter counter) {
-        return new io.prometheus.client.Gauge.Child() {
-            @Override
-            public double get() {
-                return (double) counter.getCount();
-            }
-        };
-    }
-
-    private static io.prometheus.client.Gauge.Child gaugeFrom(Meter meter) {
-        return new io.prometheus.client.Gauge.Child() {
-            @Override
-            public double get() {
-                return meter.getRate();
-            }
-        };
-    }
-
-    private static String[] toArray(List<String> list) {
-        return list.toArray(new String[list.size()]);
-    }
-
     @Override
     public PrometheusPushGatewayReporter open() {
         //todo Handle user config
-        return new PrometheusPushGatewayReporter("prometheus_job","localhost",9091);
+        return new PrometheusPushGatewayReporter("prometheus_job", "localhost", 9091);
     }
 
     @Override
@@ -94,24 +60,24 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
         CollectorRegistry registry = new CollectorRegistry();
         for (Map.Entry<Counter, MetricInfo> metric : counters.entrySet()) {
             MetricInfo metricInfo = metric.getValue();
-            collector = createCollector(metric.getKey(),metricInfo.getMetricName(),metricInfo.getHelpString(),metricInfo.getDimensionKeys(),metricInfo.getDimensionValues());
+            collector = createCollector(metric.getKey(), metricInfo.getMetricName(), metricInfo.getHelpString(), metricInfo.getDimensionKeys(), metricInfo.getDimensionValues());
             try {
                 collector.register(registry);
             } catch (Exception e) {
                 LOG.warn("There was a problem registering metric {}.", metric.getValue().toString(), e);
             }
-            addMetric(metric.getKey(),metricInfo.getDimensionValues() , collector);
+            addMetric(metric.getKey(), metricInfo.getDimensionValues(), collector);
         }
 
         for (Map.Entry<Gauge, MetricInfo> metric : gauges.entrySet()) {
             MetricInfo metricInfo = metric.getValue();
-            collector = createCollector(metric.getKey(),metricInfo.getMetricName(),metricInfo.getHelpString(),metricInfo.getDimensionKeys(),metricInfo.getDimensionValues());
+            collector = createCollector(metric.getKey(), metricInfo.getMetricName(), metricInfo.getHelpString(), metricInfo.getDimensionKeys(), metricInfo.getDimensionValues());
             try {
                 collector.register(registry);
             } catch (Exception e) {
                 LOG.warn("There was a problem registering metric {}.", metric.getValue().toString(), e);
             }
-            addMetric(metric.getKey(),metricInfo.getDimensionValues() , collector);
+            addMetric(metric.getKey(), metricInfo.getDimensionValues(), collector);
         }
 
         //todo:add histogram
@@ -128,13 +94,13 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
 
         for (Map.Entry<Meter, MetricInfo> metric : meters.entrySet()) {
             MetricInfo metricInfo = metric.getValue();
-            collector = createCollector(metric.getKey(),metricInfo.getMetricName(),metricInfo.getHelpString(),metricInfo.getDimensionKeys(),metricInfo.getDimensionValues());
+            collector = createCollector(metric.getKey(), metricInfo.getMetricName(), metricInfo.getHelpString(), metricInfo.getDimensionKeys(), metricInfo.getDimensionValues());
             try {
                 collector.register(registry);
             } catch (Exception e) {
                 LOG.warn("There was a problem registering metric {}.", metric.getValue().toString(), e);
             }
-            addMetric(metric.getKey(),metricInfo.getDimensionValues() , collector);
+            addMetric(metric.getKey(), metricInfo.getDimensionValues(), collector);
         }
 
 
@@ -207,7 +173,7 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
         }
     }
 
-    io.prometheus.client.Gauge.Child gaugeFrom(Gauge<?> gauge) {
+    private static io.prometheus.client.Gauge.Child gaugeFrom(Gauge<?> gauge) {
         return new io.prometheus.client.Gauge.Child() {
             @Override
             public double get() {
@@ -232,5 +198,41 @@ public class PrometheusPushGatewayReporter implements MetricReporter{
                 return 0;
             }
         };
+    }
+
+    private static io.prometheus.client.Gauge.Child gaugeFrom(Counter counter) {
+        return new io.prometheus.client.Gauge.Child() {
+            @Override
+            public double get() {
+                return (double) counter.getCount();
+            }
+        };
+    }
+
+    private static io.prometheus.client.Gauge.Child gaugeFrom(Meter meter) {
+        return new io.prometheus.client.Gauge.Child() {
+            @Override
+            public double get() {
+                return meter.getRate();
+            }
+        };
+    }
+
+    private static String[] toArray(List<String> list) {
+        return list.toArray(new String[list.size()]);
+    }
+
+    public static boolean isNullOrWhitespaceOnly(String str) {
+        if (str == null || str.length() == 0) {
+            return true;
+        }
+
+        final int len = str.length();
+        for (int i = 0; i < len; i++) {
+            if (!Character.isWhitespace(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

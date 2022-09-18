@@ -1,7 +1,7 @@
 package org.apache.seatunnel.metrics.core;
 
 
-import java.util.HashMap;
+import java.util.Map;
 
 public interface Histogram extends Metric{
     long getCount();
@@ -9,7 +9,7 @@ public interface Histogram extends Metric{
     double getMax();
     double getStdDev();
     double getMean();
-    HashMap<Double, Double> getQuantile();
+    Map<Double, Double> getQuantile();
 
     default MetricType getMetricType() {
         return MetricType.HISTOGRAM;

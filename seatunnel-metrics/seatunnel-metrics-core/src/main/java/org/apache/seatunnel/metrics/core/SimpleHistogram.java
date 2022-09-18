@@ -1,6 +1,6 @@
 package org.apache.seatunnel.metrics.core;
 
-import java.util.HashMap;
+import java.util.Map;
 
 public class SimpleHistogram implements Histogram{
     private long count;
@@ -8,9 +8,9 @@ public class SimpleHistogram implements Histogram{
     private double max;
     private double stdDev;
     private double mean;
-    private HashMap<Double,Double> quantile;
+    private Map<Double,Double> quantile;
 
-    public SimpleHistogram(long count, double min, double max, double stdDev, double mean, HashMap<Double, Double> quantile) {
+    public SimpleHistogram(long count, double min, double max, double stdDev, double mean, Map<Double, Double> quantile) {
         this.count = count;
         this.min = min;
         this.max = max;
@@ -45,7 +45,29 @@ public class SimpleHistogram implements Histogram{
     }
 
     @Override
-    public HashMap<Double, Double> getQuantile() {
+    public Map<Double, Double> getQuantile() {
         return this.quantile;
+    }
+
+    @Override
+    public String toString() {
+        String lineSeparator = System.lineSeparator();
+        StringBuilder builder = new StringBuilder();
+        builder.append("count: ")
+                .append(count)
+                .append(lineSeparator)
+                .append("min: ")
+                .append(min)
+                .append(lineSeparator)
+                .append("max: ")
+                .append(max)
+                .append(lineSeparator)
+                .append("stdDev: ")
+                .append(stdDev)
+                .append(lineSeparator)
+                .append("mean: ")
+                .append(mean)
+                .append(lineSeparator);
+        return builder.toString();
     }
 }

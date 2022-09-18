@@ -2,8 +2,8 @@ package org.apache.seatunnel.metrics.spark
 
 import com.codahale.metrics
 import com.codahale.metrics._
-import org.apache.seatunnel.metrics.core.reporter.PrometheusPushGatewayReporter
-import org.apache.seatunnel.metrics.core.{MetricInfo, SimpleGauge}
+import org.apache.seatunnel.metrics.core.reporter.{ConsoleLogReporter, PrometheusPushGatewayReporter}
+import org.apache.seatunnel.metrics.core.{MetricInfo, SimpleCounter, SimpleGauge, SimpleHistogram, SimpleMeter}
 import org.apache.spark.internal.Logging
 
 import java.util
@@ -78,10 +78,26 @@ abstract class SeatunnelMetricSink(property: Properties,
         if (num.toString != Long.MaxValue.toString) {
           gaugesIndex.put(new SimpleGauge(num), newMetricInfo(metricName, dimensionKeys, dimensionValues))
         } else {
-          logError(metricName + " is to a number ")
+          logError(metricName + " is not a number ")
         }
       })
-      val reporter = new PrometheusPushGatewayReporter("prometheus_spark_job", "localhost", 9091)
+
+      counters.keySet().forEach(metricName => {
+        val metric = counters.get(metricName)
+        countersIndex.put(new SimpleCounter(metric.getCount), newMetricInfo(metricName, dimensionKeys, dimensionValues))
+      })
+
+      meters.keySet().forEach(metricName => {
+        val metric = meters.get(metricName)
+        metersIndex.put(new SimpleMeter(metric.getMeanRate,metric.getCount), newMetricInfo(metricName, dimensionKeys, dimensionValues))
+      })
+
+      histograms.keySet().forEach(metricName => {
+        val metric = histograms.get(metricName)
+        histogramsIndex.put(new SimpleHistogram(metric.getCount,metric.getSnapshot.getMin,metric.getSnapshot.getMax,metric.getSnapshot.getStdDev,metric.getSnapshot.getMean,new util.HashMap[java.lang.Double,java.lang.Double](){0.75->metric.getSnapshot.get75thPercentile();0.95->metric.getSnapshot.get95thPercentile();0.99->metric.getSnapshot.get99thPercentile()}), newMetricInfo(metricName, dimensionKeys, dimensionValues))
+      })
+      //val reporter = new PrometheusPushGatewayReporter("prometheus_spark_job", "localhost", 9091)
+      val reporter = new ConsoleLogReporter();
       reporter.report(gaugesIndex, countersIndex, histogramsIndex, metersIndex)
     }
   }
